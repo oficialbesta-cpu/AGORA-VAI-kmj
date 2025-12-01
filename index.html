@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha IA</title>
+<style>
+    body { font-family: Arial; padding: 20px; background: #111; color: #fff; }
+    #respostas { max-height: 350px; overflow-y: scroll; padding: 10px; border: 1px solid #444; }
+    .msg { background: #222; padding: 8px; margin: 5px 0; border-radius: 5px; }
+    button { padding: 10px; margin-top: 10px; }
+</style>
+</head>
+
+<body>
+
+<h2>Minha IA</h2>
+
+<label>API KEY:</label><br>
+<input id="apikey" type="text" placeholder="Cole sua API aqui" style="width:100%; padding:8px;"><br><br>
+
+<label>Prompt do Sistema:</label><br>
+<textarea id="prompt" style="width:100%; height:60px;">Você é uma IA amigável.</textarea><br><br>
+
+<label>Mensagem:</label><br>
+<input id="msg" type="text" placeholder="Digite sua pergunta" style="width:100%; padding:8px;"><br><br>
+
+<button onclick="gerar()">Enviar</button>
+
+<h3>Respostas:</h3>
+<div id="respostas"></div>
+
+<script>
+async function gerar() {
+    const key = document.getElementById("apikey").value;
+    const userMsg = document.getElementById("msg").value;
+    const systemPrompt = document.getElementById("prompt").value;
+
+    if (!key) return alert("Cole sua API KEY!");
+
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
+
+    const body = {
+        contents: [
+            { role: "user", parts: [{ text: systemPrompt }] },
+            { role: "user", parts: [{ text: userMsg }] }
+        ]
+    };
+
+    let respostaDiv = document.getElementById("respostas");
+
+    try {
+        const r = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const json = await r.json();
+
+        if (json.error) {
+            respostaDiv.innerHTML += `<div class='msg'>Erro: ${json.error.message}</div>`;
+            return;
+        }
+
+        const texto = json.candidates[0].content.parts[0].text;
+
+        respostaDiv.innerHTML += `
+            <div class='msg'>
+                ${texto} <br>
+                <button onclick="navigator.clipboard.writeText('${texto.replace(/'/g, "\\'")}')">Copiar</button>
+            </div>
+        `;
+
+        respostaDiv.scrollTop = respostaDiv.scrollHeight;
+
+    } catch (e) {
+        respostaDiv.innerHTML += `<div class='msg'>Erro inesperado</div>`;
+    }
+}
+</script>
+
+</body>
+</html>
